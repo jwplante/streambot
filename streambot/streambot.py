@@ -67,13 +67,12 @@ async def play_local(ctx, filename):
     await ctx.send("Now playing file {}".format(filename))
 
 @client.command()
-async def joinvc(ctx, channel_name):
+async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
     try:
-        print(ctx.server)
         if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
+            return await ctx.voice_client.move_to(channel_name)
 
-        await channel.connect()
+        await channel_name.connect()
     except:
         print("Channel not found!!!")
 
@@ -81,7 +80,7 @@ async def joinvc(ctx, channel_name):
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
 
-tokenFile = open("/home/james/git/streambot/streambot/token.txt","r+")
+tokenFile = open("token.txt","r+")
 token = tokenFile.read()
 client.run(token)
 tokenFile.close()
