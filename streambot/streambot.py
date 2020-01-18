@@ -82,6 +82,8 @@ async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
 @client.command()
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
+
+@client.command()
 async def ytsearch(ctx):
     await ctx.send(getTitlesForSearchString(str(message.content.split("!ytsearch ")[1:])))
 
@@ -109,19 +111,19 @@ async def showq(ctx):
 
 @client.command()
 async def upvote(ctx, votedTag):
-    abstract_vote("U", str(ctx.author), votedTag)
+    await abstract_vote("U", str(ctx.author), votedTag, ctx)
 
 @client.command()
 async def downvote(ctx, votedTag):
     print(1234)
-    abstract_vote("D", str(ctx.author), votedTag)
+    await abstract_vote("D", str(ctx.author), votedTag, ctx)
 
 @client.command()
 async def remvote(ctx, votedTag):
-    abstract_vote("R", str(ctx.author), votedTag)
+    await abstract_vote("R", str(ctx.author), votedTag, ctx)
 
 #Pass in U for upvote, R for remove, and D for downvote
-def abstract_vote(typeOfVote, username, votedTag):
+async def abstract_vote(typeOfVote, username, votedTag, context):
     global q
     temp = list(q.queue)
     matchedItem = ""
@@ -133,10 +135,13 @@ def abstract_vote(typeOfVote, username, votedTag):
         if int(currentVotingTag) == int(votedTag):
             if typeOfVote == "U":
                 currentVideo.upvote(username)
+                await context.send(username + " upvoted: " + currentVideo.video_name + ", which is now at " + str(currentVideo.num_votes()) + " votes.")
             elif typeOfVote == "D":
                 currentVideo.downvote(username)
+                await context.send(username + " downvoted: " + currentVideo.video_name + ", which is now at " + str(currentVideo.num_votes()) + " votes.")
             else:
                 currentVideo.remove_vote(username)
+                await context.send(username + " removed their vote from: " + currentVideo.video_name + ", which is now at " + str(currentVideo.num_votes()) + " votes.")
 
             tempPQ.put((currentVideo.num_votes(), currentVideo, currentVotingTag))
         else:
