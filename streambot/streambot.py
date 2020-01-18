@@ -60,19 +60,28 @@ async def hello(ctx):
     await ctx.send('Hello')
 
 @client.command()
-async def joinvc(ctx):
+async def play_local(ctx, filename):
+    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
+    ctx.voice_client.play(source)
+
+    await ctx.send("Now playing file {}".format(filename))
+
+@client.command()
+async def joinvc(ctx, channel_name):
     try:
-        channel = ctx.author.voice.channel
-        global vc
-        vc = await channel.connect()
-    except discord.ClientException:
-        ctx.send('Cannot join vc')
+        print(ctx.server)
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
+
+        await channel.connect()
+    except:
+        print("Channel not found!!!")
 
 @client.command()
 async def leavevc(ctx):
-    await vc.disconnect()
+    await ctx.voice_client.disconnect()
 
-tokenFile = open("token.txt","r+")
+tokenFile = open("/home/james/git/streambot/streambot/token.txt","r+")
 token = tokenFile.read()
 client.run(token)
 tokenFile.close()
