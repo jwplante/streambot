@@ -1,25 +1,33 @@
 
 class Video:
 
-    def __init__(self, iden, video_name, channel_name, url, votes):
-        self.id = iden # UID of the video
+    def __init__(self, video_name, url):
         self.video_name = video_name # Video title
-        self.channel_name = channel_name # Channel name
         self.url = url # Url of the video
+        self.id = self.get_video_id() # UID of the video
         # Dictionary for key-value store with usernames as the key and 
         # "U" - upvote
         # "D" - downvote
         # "N" - no vote
         self.__votes__ = {} 
+
+
+    def __str__(self):
+        return "ID: {}, Title: {}, Link: {}".format(self.id, self.video_name, self.url)
     
+
+    def print_with_votes(self):
+        return "ID: {}, Votes: {} Title: {}, Link: {}".format(self.id, self.num_votes(), self.video_name, self.url)
+
     """
     Strips the ID of the YouTube video. Returns empty string if not found.
     """
-    def get_video_id(self, url):
-        if (url.startswith("https://www.youtube.com/watch?v=")):
-            return url[32:]
+    def get_video_id(self):
+        if (self.url.startswith("https://www.youtube.com/watch?v=")):
+            return self.url[32:]
         else:
             return ""
+
 
     """
     Get the total value of votes. An upvote is 1 and a downvote is -1
