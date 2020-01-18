@@ -19,4 +19,13 @@ def getTitlesForSearchString(searchString):
 
     return finalString
 
-print(getTitlesForSearchString("we are number one"))
+# print(getTitlesForSearchString("we are number one"))
+from queue import PriorityQueue
+finalStr = ""
+q = PriorityQueue()
+q.put((0, "Who are you"))
+q.put((0, "Who are me"))
+temp = list(q.queue)
+for item in temp:
+    finalStr += item[1] + '\n'
+print(finalStr)
