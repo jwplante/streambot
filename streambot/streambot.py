@@ -1,4 +1,8 @@
 import discord
+from copy import deepcopy
+import video
+from youtube import getTitlesForSearchString
+from youtube import getAllVideosFromSearch
 from discord.ext import commands
 from discord.voice_client import VoiceClient
 import asyncio
@@ -8,8 +12,10 @@ client = commands.Bot(command_prefix="!")
 
 from queue import PriorityQueue
 
+votingTag = 0
+
 q = PriorityQueue()
-vc = None
+userVoteMap = {}
 
 @client.event
 async def on_ready():
@@ -17,42 +23,31 @@ async def on_ready():
 
 # @client.event
 # async def on_message(message):
+#     global q
+#     global votingTag
+
 #     if message.author == client.user:
 #         return
-#
+
 #     if message.content.startswith('$hello'):
 #         await message.channel.send('Hello!')
-#     elif message.content.startswith('!ytsearch'):
-#         from youtube import getTitlesForSearchString
-#         await message.channel.send(getTitlesForSearchString(str(message.content.split("!ytsearch ")[1:])))
-#     elif message.content.startswith("!add2q"):
-#         # Should be in format of !add2q $numberResult $searchPhrase
-#         # E.g. !add2q 1 who are you
-#         args = message.content.split(" ")[1:]
-#         numberResult = args[0]
-#         searchPhrase = " ".join(args[1:])
-#         await message.channel.send("Adding " + searchPhrase + " to the queue.")
-#         q.put((0, searchPhrase))
-#     elif message.content.startswith('!showq'):
-#         finalStr = ""
+#     elif message.content.startswith('!upvote'):
+#         votedTag = message.content.split(" ")[1]
 #         temp = list(q.queue)
+#         matchedItem = ""
+#         tempPQ = PriorityQueue()
+
 #         for item in temp:
-#             finalStr += item[1] + '\n'
-#         await message.channel.send(finalStr)
-#     # elif message.content.startswith('!joinvoice'):
-#     #     # Should be in format of !joinvoice <voice channel>
-#     #     # channelName = message.content.split(" ")[1:]
-#     #     # channel = discord.utils.get(server.channels, name=channelName, type="ChannelType.voice")
-#     #     try:
-#     #         vc = await channel
-#     #         await client.join_voice_channel(channel)
-#     #     except discord.ClientException:
-#     #         await client.send('Already in a voice channel...')
-#     #     except discord.InvalidArgument:
-#     #         await client.send('This is not a voice channel...')
-#     #     else:
-#     #         await client.send('Ready to play audio in ' + channel)
-#     #elif message.content.startswith('!leavevoice'):
+#             currentVotingTag = item[2]
+#             currentVideo = item[1]
+#             print(currentVotingTag == votedTag)
+#             if int(currentVotingTag) == int(votedTag) and not currentVideo.already_voted(str(message.author)):
+#                 currentVideo.upvote(str(message.author))
+#                 print(currentVideo.num_votes())
+#                 tempPQ.put((currentVideo.num_votes(), currentVideo, currentVotingTag))
+#             else:
+#                 tempPQ.put(item)
+#         q = tempPQ
 
 @client.command()
 async def hello(ctx):
@@ -87,6 +82,66 @@ async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
 @client.command()
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
+async def ytsearch(ctx):
+    await ctx.send(getTitlesForSearchString(str(message.content.split("!ytsearch ")[1:])))
+
+@client.command()
+async def add2q(ctx, numberResult, searchPhrase):
+    global q
+    global votingTag
+    # Should be in format of !add2q $numberResult $searchPhrase
+    # E.g. !add2q 1 who are you 
+    # args = message.content.split(" ")[1:]
+    # numberResult = args[0]
+    # searchPhrase = " ".join(args[1:])
+    await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
+    vid = getAllVideosFromSearch(searchPhrase)[0]
+    q.put((vid.num_votes(), vid, votingTag))
+    votingTag += 1
+
+@client.command()
+async def showq(ctx):
+    finalStr = ""
+    temp = list(q.queue)
+    for item in temp:
+        finalStr += item[1].video_name + ": " + str(item[0]) + " votes with voting tag #" + str(item[2]) + '\n'
+    await ctx.send(finalStr)
+
+@client.command()
+async def upvote(ctx, votedTag):
+    abstract_vote("U", str(ctx.author), votedTag)
+
+@client.command()
+async def downvote(ctx, votedTag):
+    print(1234)
+    abstract_vote("D", str(ctx.author), votedTag)
+
+@client.command()
+async def remvote(ctx, votedTag):
+    abstract_vote("R", str(ctx.author), votedTag)
+
+#Pass in U for upvote, R for remove, and D for downvote
+def abstract_vote(typeOfVote, username, votedTag):
+    global q
+    temp = list(q.queue)
+    matchedItem = ""
+    tempPQ = PriorityQueue()
+
+    for item in temp:
+        currentVotingTag = item[2]
+        currentVideo = item[1]
+        if int(currentVotingTag) == int(votedTag):
+            if typeOfVote == "U":
+                currentVideo.upvote(username)
+            elif typeOfVote == "D":
+                currentVideo.downvote(username)
+            else:
+                currentVideo.remove_vote(username)
+
+            tempPQ.put((currentVideo.num_votes(), currentVideo, currentVotingTag))
+        else:
+            tempPQ.put(item)
+    q = tempPQ
 
 tokenFile = open("token.txt","r+")
 token = tokenFile.read()
