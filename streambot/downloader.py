@@ -52,14 +52,6 @@ class Downloader:
             print("Downloading file from {}".format(url))
             ydl.download([url])
    
-    """
-    Strips the ID of the YouTube video. Returns empty string if not found.
-    """
-    def get_video_id(self, url):
-        if (url.startswith("https://www.youtube.com/watch?v=")):
-            return url[32:]
-        else:
-            return ""
 
     """
     Given the filepath, list the downloaded ID'd files 
