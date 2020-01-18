@@ -10,4 +10,13 @@ def getLinksForSearchString(searchString):
 
     return arr
 
-print(getLinksForSearchString("we are number one"))
+def getTitlesForSearchString(searchString):
+    results = YoutubeSearch(searchString, max_results=10).to_json()
+    results = ast.literal_eval(results)['videos']
+    finalString = ""
+    for index, res in enumerate(results):
+        finalString += str(index + 1) + '. ' + res['title'] + '\n'
+
+    return finalString
+
+print(getTitlesForSearchString("we are number one"))
