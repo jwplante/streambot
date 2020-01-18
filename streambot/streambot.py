@@ -55,6 +55,10 @@ async def hello(ctx):
     await ctx.send('Hello')
 
 @client.command()
+async def ytsearch(ctx, phrase):
+    await ctx.send(getTitlesForSearchString(phrase))
+
+@client.command()
 async def play_local(ctx, filename):
     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
     ctx.voice_client.play(source)
@@ -82,10 +86,6 @@ async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
 @client.command()
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
-
-@client.command()
-async def ytsearch(ctx):
-    await ctx.send(getTitlesForSearchString(str(message.content.split("!ytsearch ")[1:])))
 
 @client.command()
 async def add2q(ctx, numberResult, searchPhrase):
