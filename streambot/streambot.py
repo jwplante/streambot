@@ -67,6 +67,14 @@ async def play_local(ctx, filename):
     await ctx.send("Now playing file {}".format(filename))
 
 @client.command()
+async def pause(ctx):
+    if (ctx.voice.is_playing()): ctx.voice_client.pause()
+
+@client.command()
+async def resume(ctx):
+    if (ctx.voice.is_paused()): ctx.voice_client.resume()
+
+@client.command()
 async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
     try:
         if ctx.voice_client is not None:
