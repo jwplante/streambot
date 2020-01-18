@@ -67,4 +67,3 @@ class Video:
     """
     def remove_vote(self, user_name):
         self.__votes__[user_name] = "N"
-
