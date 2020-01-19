@@ -1,16 +1,21 @@
 
 class Video:
 
-    def __init__(self, video_name, url):
+    def __init__(self, video_name, url, id):
         self.video_name = video_name # Video title
         self.url = url # Url of the video
-        self.id = self.get_video_id() # UID of the video
+        self.id = id # UID of the video
         # Dictionary for key-value store with usernames as the key and 
         # "U" - upvote
         # "D" - downvote
         # "N" - no vote
         self.__votes__ = {} 
 
+    def __eq__(self, value):
+        return self.video_name == value.video_name and self.url == value.url and self.id == value.id
+
+    def __lt__(self, value):
+        return value.num_votes() < self.num_votes()
 
     def __str__(self):
         return "ID: {}, Title: {}, Link: {}".format(self.id, self.video_name, self.url)

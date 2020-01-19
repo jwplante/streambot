@@ -21,12 +21,12 @@ def getTitlesForSearchString(searchString):
 
     return finalString
 
-def getAllVideosFromSearch(searchString):
+def getAllVideosFromSearch(searchString, votingTag):
     results = YoutubeSearch(searchString, max_results=10).to_json()
     results = ast.literal_eval(results)['videos']
     arr = []
     for res in results:
-        arr.append(Video(res['title'], 'https://www.youtube.com' + res['link']))
+        arr.append(Video(res['title'], 'https://www.youtube.com' + res['link'], votingTag))
         
     return arr
 
