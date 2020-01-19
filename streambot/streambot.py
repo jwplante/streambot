@@ -62,17 +62,28 @@ async def leavevc(ctx):
 
 @client.command()
 async def add(ctx, numberResult, searchPhrase):
-    global heap
-    global votingTag
-    # Should be in format of !add2q $numberResult $searchPhrase
-    # E.g. !add2q 1 who are you 
-    await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
-    vid = getAllVideosFromSearch(searchPhrase, votingTag)[0]
-    heappush(heap, (vid.num_votes(), vid))
-    votingTag += 1
+    try:
+        global heap
+        global votingTag
+        # Should be in format of !add2q $numberResult $searchPhrase
+        # E.g. !add2q 1 who are you 
+        if int(numberResult) > 10 or int(numberResult) < 1:
+            await ctx.send("Error the number of the result must be (1-10), found: " + numberResult)
+            return
+
+        await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
+        vid = getAllVideosFromSearch(searchPhrase, votingTag)[numberResult + 1]
+        heappush(heap, (vid.num_votes(), vid))
+        votingTag += 1
+    except:
+        await ctx.send("Error, usage of `!add` is `!add [the number search result 1-10] \"search keyphrase\"`")
 
 @client.command()
 async def show(ctx):
+    if len(heap) == 0:
+        await ctx.send("The queue is empty, add something with `!add`")
+        return
+
     finalStr = ""
     temp = copy.deepcopy(heap)
     tmpArr = []
