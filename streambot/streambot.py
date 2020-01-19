@@ -32,6 +32,34 @@ async def hello(ctx):
 async def ytsearch(ctx, phrase):
     await ctx.send(getTitlesForSearchString(phrase))
 
+async def play_local(ctx, filename):
+    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
+    ctx.voice_client.play(source)
+
+    await ctx.send("Now playing file {}".format(filename))
+
+@client.command()
+async def pause(ctx):
+    if (ctx.voice.is_playing()): ctx.voice_client.pause()
+
+@client.command()
+async def resume(ctx):
+    if (ctx.voice.is_paused()): ctx.voice_client.resume()
+
+@client.command()
+async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
+    try:
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel_name)
+
+        await channel_name.connect()
+    except:
+        print("Channel not found!!!")
+
+@client.command()
+async def leavevc(ctx):
+    await ctx.voice_client.disconnect()
+
 @client.command()
 async def add(ctx, numberResult, searchPhrase):
     global heap
