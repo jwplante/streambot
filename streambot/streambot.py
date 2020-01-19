@@ -1,6 +1,7 @@
 import discord
 import copy
 import video
+import youtube_dl
 from youtube import getTitlesForSearchString
 from youtube import getAllVideosFromSearch
 from discord.ext import commands
@@ -60,19 +61,49 @@ async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
 
+def printer():
+    print("Wohooooooooooooooooooo")
+
+@client.command()
+async def play(ctx):
+    vid = heappop(heap)[1]
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'download_archive':"/vidpath",
+        }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        print("Downloading file from {}".format(vid.url))
+        ydl.download([vid.url])
+
+    filename = vid.video_name + '-' + vid.get_video_id() + '.webm'
+    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
+    print(ctx)
+    print(ctx.voice_client)
+    ctx.voice_client.play(source, after=printer)
+
 @client.command()
 async def add(ctx, numberResult, searchPhrase):
     global heap
     global votingTag
     # Should be in format of !add2q $numberResult $searchPhrase
     # E.g. !add2q 1 who are you 
+    if int(numberResult) > 10 or int(numberResult) < 1:
+        await ctx.send("Error the number of the result must be (1-10), found: " + numberResult)
+        return
+
     await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
-    vid = getAllVideosFromSearch(searchPhrase, votingTag)[0]
+    vid = getAllVideosFromSearch(searchPhrase, votingTag)[int(numberResult) + 1]
     heappush(heap, (vid.num_votes(), vid))
     votingTag += 1
+    # except:
+        # await ctx.send("Error, usage of `!add` is `!add [the number search result 1-10] \"search keyphrase\"`")
 
 @client.command()
 async def show(ctx):
+    if len(heap) == 0:
+        await ctx.send("The queue is empty, add something with `!add`")
+        return
+
     finalStr = ""
     temp = copy.deepcopy(heap)
     tmpArr = []
