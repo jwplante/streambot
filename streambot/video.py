@@ -18,7 +18,7 @@ class Video:
         return value.num_votes() < self.num_votes()
 
     def __str__(self):
-        return "ID: {}, Title: {}, Link: {}".format(self.id, self.video_name, self.url)
+        return "{}, Link: {}".format(self.video_name, self.url)
     
 
     def print_with_votes(self):
@@ -43,7 +43,10 @@ class Video:
             if vote == 'U':
                 total_votes += 1
             elif vote == 'D':
-                total_votes -= 1
+                if (total_votes > 0):
+                    total_votes -= 1
+                else:
+                    total_votes = 0
         return total_votes
     
     """

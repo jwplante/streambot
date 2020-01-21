@@ -7,18 +7,17 @@ from youtube import getAllVideosFromSearch
 from discord.ext import commands
 from discord.voice_client import VoiceClient
 import asyncio
-
-# client = discord.Client()
-client = commands.Bot(command_prefix="!")
-
 from queue import PriorityQueue
 from heapq import heappush, heappop, heapify
+
+client = commands.Bot(command_prefix="!")
 
 votingTag = 0
 
 heap = []
 heapify(heap)
 userVoteMap = {}
+filepath = "/tmp/streambot/"
 
 @client.event
 async def on_ready():
@@ -33,19 +32,13 @@ async def hello(ctx):
 async def ytsearch(ctx, phrase):
     await ctx.send(getTitlesForSearchString(phrase))
 
-async def play_local(ctx, filename):
-    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
-    ctx.voice_client.play(source)
-
-    await ctx.send("Now playing file {}".format(filename))
-
 @client.command()
 async def pause(ctx):
-    if (ctx.voice.is_playing()): ctx.voice_client.pause()
+    if (ctx.voice_client.is_playing()): ctx.voice_client.pause()
 
 @client.command()
 async def resume(ctx):
-    if (ctx.voice.is_paused()): ctx.voice_client.resume()
+    if (ctx.voice_client.is_paused()): ctx.voice_client.resume()
 
 @client.command()
 async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
@@ -61,25 +54,28 @@ async def joinvc(ctx, *, channel_name: discord.VoiceChannel):
 async def leavevc(ctx):
     await ctx.voice_client.disconnect()
 
-def printer():
-    print("Wohooooooooooooooooooo")
+def play_local(ctx):
+    asyncio.run_coroutine_threadsafe(play(ctx), client.loop)
 
 @client.command()
 async def play(ctx):
-    vid = heappop(heap)[1]
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'download_archive':"/vidpath",
+    if not ctx.voice_client.is_playing() and len(heap) != 0:
+        vid = heappop(heap)[1]
+        filename = filepath + vid.get_video_id() + '.webm'
+        ydl_opts = {
+            'format': 'bestaudio/webm',
+            'download_archive': filepath + "/vidpath",
+            'outtmpl': filename
         }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        print("Downloading file from {}".format(vid.url))
-        ydl.download([vid.url])
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            print("Downloading file from {}".format(vid.url))
+            ydl.download([vid.url])
 
-    filename = vid.video_name + '-' + vid.get_video_id() + '.webm'
-    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
-    print(ctx)
-    print(ctx.voice_client)
-    ctx.voice_client.play(source, after=printer)
+        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
+        await ctx.send("Now playing {}".format(str(vid)))
+        ctx.voice_client.play(source)
+    else:
+        ctx.voice_client.resume()
 
 @client.command()
 async def add(ctx, numberResult, searchPhrase):
@@ -92,11 +88,9 @@ async def add(ctx, numberResult, searchPhrase):
         return
 
     await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
-    vid = getAllVideosFromSearch(searchPhrase, votingTag)[int(numberResult) + 1]
+    vid = getAllVideosFromSearch(searchPhrase, votingTag)[int(numberResult) - 1]
     heappush(heap, (vid.num_votes(), vid))
     votingTag += 1
-    # except:
-        # await ctx.send("Error, usage of `!add` is `!add [the number search result 1-10] \"search keyphrase\"`")
 
 @client.command()
 async def show(ctx):
@@ -112,7 +106,7 @@ async def show(ctx):
 
     tmpArr.reverse()
     for item in tmpArr:
-        finalStr += str(item[0]) + " votes: " + item[1].video_name + " " + " with voting tag #" + str(item[1].id) + '\n'
+        finalStr += str(-item[0]) + " votes: " + item[1].video_name + " " + " with voting tag #" + str(item[1].id) + '\n'
     await ctx.send(finalStr)
 
 @client.command()
@@ -127,11 +121,16 @@ async def downvote(ctx, votedTag):
 async def remvote(ctx, votedTag):
     await abstract_vote("R", str(ctx.author), votedTag, ctx)
 
+@client.command()
+async def skip(ctx):
+    if ctx.voice_client.is_playing(): 
+        ctx.voice_client.stop()
+        ctx.play_local(ctx)
+
 #Pass in U for upvote, R for remove, and D for downvote
 async def abstract_vote(typeOfVote, username, votedTag, context):
     global heap
     temp = copy.deepcopy(heap)
-    matchedItem = ""
     tempHeap = []
 
     for item in temp:
@@ -148,7 +147,7 @@ async def abstract_vote(typeOfVote, username, votedTag, context):
                 currentVideo.remove_vote(username)
                 await context.send(username + " removed their vote from: " + currentVideo.video_name + ", which is now at " + str(currentVideo.num_votes()) + " votes.")
 
-            heappush(tempHeap, (currentVideo.num_votes(), currentVideo))
+            heappush(tempHeap, (-currentVideo.num_votes(), currentVideo))
         else:
             heappush(tempHeap, item)
     heap = tempHeap
