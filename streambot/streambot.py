@@ -18,6 +18,8 @@ heap = []
 heapify(heap)
 userVoteMap = {}
 filepath = "/tmp/streambot/"
+ev_q = asyncio.Queue()
+play_next = asyncio.Event()
 
 @client.event
 async def on_ready():
@@ -83,12 +85,15 @@ async def add(ctx, numberResult, searchPhrase):
     global votingTag
     # Should be in format of !add2q $numberResult $searchPhrase
     # E.g. !add2q 1 who are you 
-    if int(numberResult) > 10 or int(numberResult) < 1:
-        await ctx.send("Error the number of the result must be (1-10), found: " + numberResult)
+
+    vidarr = getAllVideosFromSearch(searchPhrase, votingTag)
+    vid = vidarr[int(numberResult) - 1]
+    # Check to see if the results are in range
+    if int(numberResult) > len(vidarr) or int(numberResult) < 1:
+        await ctx.send("Error the number of the result must be (1-{})".format(numberResult))
         return
 
     await ctx.send("Adding " + searchPhrase + " to the queue with voting tag #" + str(votingTag) + ".")
-    vid = getAllVideosFromSearch(searchPhrase, votingTag)[int(numberResult) - 1]
     heappush(heap, (vid.num_votes(), vid))
     votingTag += 1
 
@@ -98,13 +103,12 @@ async def show(ctx):
         await ctx.send("The queue is empty, add something with `!add`")
         return
 
-    finalStr = ""
+    finalStr = "Current Queue\nUp next: "
     temp = copy.deepcopy(heap)
     tmpArr = []
     while len(temp) != 0:
         tmpArr.append(heappop(temp))
 
-    tmpArr.reverse()
     for item in tmpArr:
         finalStr += str(-item[0]) + " votes: " + item[1].video_name + " " + " with voting tag #" + str(item[1].id) + '\n'
     await ctx.send(finalStr)
