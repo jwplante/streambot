@@ -1,0 +1,5 @@
+# Token for the bot
+token= Put token here
+
+# File path for the bot to store downloads to
+path= Put folder name here

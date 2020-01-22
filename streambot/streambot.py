@@ -1,5 +1,7 @@
+import sys
 import discord
 import copy
+import string
 import video
 import youtube_dl
 from youtube import getTitlesForSearchString
@@ -17,9 +19,32 @@ votingTag = 0
 heap = []
 heapify(heap)
 userVoteMap = {}
-filepath = "/tmp/streambot/"
-ev_q = asyncio.Queue()
-play_next = asyncio.Event()
+filepath = "Filename not found!"
+
+def main():
+    global filepath
+    # Default settings
+    token = "Token not found!"
+
+    # Parse the file
+    tokenFile = open("config.txt","r+")
+    for line in tokenFile:
+        if (line.startswith("token=")):
+            token = line[6:].strip(string.whitespace) 
+        elif (line.startswith("path=")):
+            filepath = line[5:].strip(string.whitespace)
+
+    if (token == "Token not found!"):
+        print("No token given in config.txt!")
+        exit()
+    elif (filepath == "Filename not found!"):
+        print("No filename given in config.txt!")
+        exit()
+
+    print("Connecting with token: " + token)
+    print("Download directory: " + filepath)
+    client.run(token)
+    tokenFile.close()
 
 @client.event
 async def on_ready():
@@ -156,7 +181,4 @@ async def abstract_vote(typeOfVote, username, votedTag, context):
             heappush(tempHeap, item)
     heap = tempHeap
 
-tokenFile = open("token.txt","r+")
-token = tokenFile.read()
-client.run(token)
-tokenFile.close()
+main()
